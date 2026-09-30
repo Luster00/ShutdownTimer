@@ -1,0 +1,19 @@
+# Сборка
+bin/
+obj/
+publish/
+artifacts/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# Прочее
+*.log
+*.tmp
+Thumbs.db
+.DS_Store
