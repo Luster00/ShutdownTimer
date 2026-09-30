@@ -8,6 +8,8 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 <img width="431" height="728" alt="изображение" src="https://github.com/user-attachments/assets/00ec5d19-596d-409a-884e-9ce71fcf103a" />
+<img width="432" height="728" alt="изображение" src="https://github.com/user-attachments/assets/68b90a53-e568-4bbe-8a7a-534ef0f2c821" />
+
 
 <!-- Добавьте скриншот: положите файл в docs/images/screenshot.png и раскомментируйте строку ниже -->
 <!-- ![Скриншот](docs/images/screenshot.png) -->
