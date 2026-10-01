@@ -5,6 +5,17 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-01
+
+### Added
+
+- Сохранение настроек между запусками: режим, время таймера, время для точного режима, действие (выключение или перезагрузка) и напоминания. Файл хранится в `%AppData%\ShutdownTimer\settings.json`.
+
+### Fixed
+
+- Workflow `Build` теперь запускается и для ветки `master`.
+- В `README.md` и `CHANGELOG.md` исправлены ссылки на репозиторий.
+
 ## [0.1.1] - 2026-09-30
 
 ### Fixed
@@ -28,6 +39,7 @@
 - Работа в системном трее: сворачивание по крестику, меню значка, обратный отсчёт в подсказке.
 - Тёмный интерфейс с кольцом обратного отсчёта и анимациями.
 
-[Unreleased]: https://github.com/YOUR_USERNAME/shutdown-timer/compare/v0.1.1...HEAD
-[0.1.1]: https://github.com/YOUR_USERNAME/shutdown-timer/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/YOUR_USERNAME/shutdown-timer/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Luster00/ShutdownTimer/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Luster00/ShutdownTimer/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/Luster00/ShutdownTimer/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/Luster00/ShutdownTimer/releases/tag/v0.1.0
