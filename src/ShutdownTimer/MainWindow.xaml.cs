@@ -26,9 +26,12 @@ public partial class MainWindow : Window
     readonly WF.ToolStripMenuItem _cancelItem;
     readonly Stepper _th, _tm, _ch, _cm;
     readonly HashSet<int> _fired = new();
+    readonly AppSettings _settings = AppSettings.Load();
+    readonly DispatcherTimer _saveTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
 
     DateTime _start, _target, _intro;
     bool _active, _final, _exit, _hintShown;
+    bool _clockTouched;   // время для точного режима сохраняем, только если пользователь его выбирал
     int _lastSec = -1;
 
     bool IsTimerMode => RbTimer.IsChecked == true;
@@ -40,14 +43,31 @@ public partial class MainWindow : Window
         var soft = (Style)FindResource("Soft");
 
         var later = DateTime.Now.AddHours(1);
-        _th = new Stepper("часы", 0, 23, 0, soft);
-        _tm = new Stepper("мин", 0, 59, 30, soft);
-        _ch = new Stepper("часы", 0, 23, later.Hour, soft);
-        _cm = new Stepper("мин", 0, 59, 0, soft);
+        _th = new Stepper("часы", 0, 23, _settings.TimerHours, soft);
+        _tm = new Stepper("мин", 0, 59, _settings.TimerMinutes, soft);
+        _ch = new Stepper("часы", 0, 23, _settings.ClockHour ?? later.Hour, soft);
+        _cm = new Stepper("мин", 0, 59, _settings.ClockMinute ?? 0, soft);
 
         TimerHost.Children.Add(_th); TimerHost.Children.Add(Colon()); TimerHost.Children.Add(_tm);
         ClockHost.Children.Add(_ch); ClockHost.Children.Add(Colon()); ClockHost.Children.Add(_cm);
-        foreach (var s in new[] { _th, _tm, _ch, _cm }) s.Changed += RefreshIdle;
+        foreach (var s in new[] { _th, _tm, _ch, _cm }) s.Changed += OnInputChanged;
+
+        _clockTouched = _settings.ClockHour != null;
+        _ch.Changed += () => _clockTouched = true;
+        _cm.Changed += () => _clockTouched = true;
+
+        // --- восстановление сохранённых настроек ---
+        RbClock.IsChecked = _settings.ExactTimeMode;
+        RbTimer.IsChecked = !_settings.ExactTimeMode;
+        PanelTimer.Visibility = _settings.ExactTimeMode ? Visibility.Collapsed : Visibility.Visible;
+        PanelClock.Visibility = _settings.ExactTimeMode ? Visibility.Visible : Visibility.Collapsed;
+        RbRestart.IsChecked = _settings.Restart;
+        RbShutdown.IsChecked = !_settings.Restart;
+        Reminders.IsChecked = _settings.Reminders;
+
+        // сохранение с задержкой, чтобы не писать файл на каждый щелчок по ▲ ▼
+        _saveTimer.Tick += (_, _) => SaveSettings();
+        Application.Current.SessionEnding += (_, _) => SaveSettings();
 
         // --- трей ---
         var menu = new WF.ContextMenuStrip();
@@ -124,6 +144,7 @@ public partial class MainWindow : Window
             MessageBox.Show("Таймер активен. Выйти и отменить выключение?", "Shutdown Timer",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         if (_active) Cancel();
+        SaveSettings();
         _exit = true;
         _tray.Visible = false;
         _tray.Dispose();
@@ -164,6 +185,7 @@ public partial class MainWindow : Window
             new DoubleAnimation(IsTimerMode ? -36 : 36, 0, TimeSpan.FromMilliseconds(300))
             { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
         RefreshIdle();
+        ScheduleSave();
     }
 
     void Chip_Click(object s, RoutedEventArgs e)
@@ -172,6 +194,39 @@ public partial class MainWindow : Window
         _th.Set(min / 60);
         _tm.Set(min % 60);
         RefreshIdle();
+        ScheduleSave();
+    }
+
+    void Option_Click(object s, RoutedEventArgs e) => ScheduleSave();
+
+    void OnInputChanged()
+    {
+        RefreshIdle();
+        ScheduleSave();
+    }
+
+    // ---------------- Настройки ----------------
+
+    void ScheduleSave()
+    {
+        _saveTimer.Stop();
+        _saveTimer.Start();
+    }
+
+    void SaveSettings()
+    {
+        _saveTimer.Stop();
+        _settings.ExactTimeMode = !IsTimerMode;
+        _settings.TimerHours = _th.Value;
+        _settings.TimerMinutes = _tm.Value;
+        if (_clockTouched)
+        {
+            _settings.ClockHour = _ch.Value;
+            _settings.ClockMinute = _cm.Value;
+        }
+        _settings.Restart = IsRestart;
+        _settings.Reminders = Reminders.IsChecked == true;
+        _settings.Save();
     }
 
     DateTime NextClock()
@@ -229,6 +284,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        SaveSettings();
         _start = now; _target = target; _intro = now;
         _fired.Clear(); _final = false; _active = true; _lastSec = -1;
 

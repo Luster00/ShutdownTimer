@@ -258,13 +258,13 @@
                 <Border CornerRadius="16" Background="#14FFFFFF" Padding="2">
                     <UniformGrid Columns="2">
                         <RadioButton x:Name="RbShutdown" Style="{StaticResource Seg}" GroupName="act"
-                                     Content="Выключить" IsChecked="True"/>
+                                     Content="Выключить" IsChecked="True" Click="Option_Click"/>
                         <RadioButton x:Name="RbRestart" Style="{StaticResource Seg}" GroupName="act"
-                                     Content="Перезагрузить"/>
+                                     Content="Перезагрузить" Click="Option_Click"/>
                     </UniformGrid>
                 </Border>
                 <CheckBox x:Name="Reminders" Style="{StaticResource Toggle}" Margin="4,14,0,0"
-                          Content="Напоминать за 10, 5 и 1 минуту" IsChecked="True"/>
+                          Content="Напоминать за 10, 5 и 1 минуту" IsChecked="True" Click="Option_Click"/>
             </StackPanel>
 
             <!-- Главная кнопка -->
