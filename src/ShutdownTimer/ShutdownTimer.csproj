@@ -9,9 +9,13 @@
     <Nullable>enable</Nullable>
     <AssemblyName>ShutdownTimer</AssemblyName>
     <RootNamespace>ShutdownTimer</RootNamespace>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <Product>Shutdown Timer</Product>
     <Description>Таймер выключения ПК с уведомлениями и работой в трее</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShutdownTimer.Core\ShutdownTimer.Core.csproj" />
+  </ItemGroup>
 
 </Project>

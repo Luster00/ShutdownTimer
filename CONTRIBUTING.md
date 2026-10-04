@@ -11,9 +11,12 @@
 Проверить, что всё собирается:
 
 ```powershell
-dotnet build src/ShutdownTimer -c Release
+dotnet build ShutdownTimer.sln -c Release
+dotnet test
 dotnet run --project src/ShutdownTimer
 ```
+
+Логику, которая не связана с интерфейсом (вычисления времени, настройки), размещайте в `src/ShutdownTimer.Core` и покрывайте тестами в `tests/ShutdownTimer.Tests`. Тесты не зависят от WPF и текущего времени: «сейчас» передаётся параметром.
 
 ## Как предложить изменение
 
