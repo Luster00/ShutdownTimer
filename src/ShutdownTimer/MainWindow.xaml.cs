@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using ShutdownTimer.Core;
 using SD = System.Drawing;
 using WF = System.Windows.Forms;
 
@@ -16,8 +17,6 @@ namespace ShutdownTimer;
 
 public partial class MainWindow : Window
 {
-    // За сколько секунд до конца показывать напоминания
-    static readonly int[] Marks = { 600, 300, 60, 30 };
     const int FinalSeconds = 20;          // сколько секунд даём на отмену после команды shutdown
     const double C = 110, R = 104;        // центр и радиус кольца
 
@@ -29,24 +28,38 @@ public partial class MainWindow : Window
     readonly AppSettings _settings = AppSettings.Load();
     readonly DispatcherTimer _saveTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
 
-    DateTime _start, _target, _intro;
+    DateTime _start, _target;
     bool _active, _final, _exit, _hintShown;
     bool _clockTouched;   // время для точного режима сохраняем, только если пользователь его выбирал
     int _lastSec = -1;
+    int _ringGen;         // «поколение» анимации кольца: устаревшие обработчики Completed игнорируются
 
     bool IsTimerMode => RbTimer.IsChecked == true;
     bool IsRestart => RbRestart.IsChecked == true;
 
+    // Окно действительно видно на экране (не скрыто в трей и не свёрнуто)
+    bool Shown => IsVisible && WindowState != WindowState.Minimized;
+
+    // Доля кольца: 1 - полное, 0 - пустое. Значение анимируется средствами WPF,
+    // поэтому дуга движется плавно (до 60 кадров в секунду), а не шагами по тику таймера.
+    public static readonly DependencyProperty RingFractionProperty = DependencyProperty.Register(
+        nameof(RingFraction), typeof(double), typeof(MainWindow),
+        new PropertyMetadata(0.0, (d, e) => ((MainWindow)d).DrawArc((double)e.NewValue)));
+
+    public double RingFraction
+    {
+        get => (double)GetValue(RingFractionProperty);
+        set => SetValue(RingFractionProperty, value);
+    }
+
     public MainWindow()
     {
         InitializeComponent();
-        var soft = (Style)FindResource("Soft");
-
         var later = DateTime.Now.AddHours(1);
-        _th = new Stepper("часы", 0, 23, _settings.TimerHours, soft);
-        _tm = new Stepper("мин", 0, 59, _settings.TimerMinutes, soft);
-        _ch = new Stepper("часы", 0, 23, _settings.ClockHour ?? later.Hour, soft);
-        _cm = new Stepper("мин", 0, 59, _settings.ClockMinute ?? 0, soft);
+        _th = new Stepper("часы", 0, 23, _settings.TimerHours, this);
+        _tm = new Stepper("мин", 0, 59, _settings.TimerMinutes, this);
+        _ch = new Stepper("часы", 0, 23, _settings.ClockHour ?? later.Hour, this);
+        _cm = new Stepper("мин", 0, 59, _settings.ClockMinute ?? 0, this);
 
         TimerHost.Children.Add(_th); TimerHost.Children.Add(Colon()); TimerHost.Children.Add(_tm);
         ClockHost.Children.Add(_ch); ClockHost.Children.Add(Colon()); ClockHost.Children.Add(_cm);
@@ -89,6 +102,10 @@ public partial class MainWindow : Window
         _tick.Tick += (_, _) => OnTick();
         _tick.Start();
 
+        // Пока окно скрыто в трей или свёрнуто, анимации не нужны: останавливаем их и не тратим процессор
+        IsVisibleChanged += (_, _) => OnVisibilityChanged();
+        StateChanged += (_, _) => OnVisibilityChanged();
+
         Loaded += (_, _) =>
         {
             var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
@@ -101,10 +118,10 @@ public partial class MainWindow : Window
         };
     }
 
-    static TextBlock Colon() => new()
+    TextBlock Colon() => new()
     {
         Text = ":", FontSize = 40, FontWeight = FontWeights.Light,
-        Foreground = new SolidColorBrush(Color.FromRgb(0x5A, 0x63, 0x90)),
+        Foreground = (Brush)FindResource("TextMutedBrush"), Opacity = 0.6,
         VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, -6, 0, 0)
     };
 
@@ -151,15 +168,19 @@ public partial class MainWindow : Window
         Application.Current.Shutdown();
     }
 
-    static SD.Icon MakeIcon()
+    SD.Icon MakeIcon()
     {
+        // цвета значка берутся из той же палитры, что и интерфейс
+        var accent = (Color)FindResource("AccentColor");
+        var glyph = (Color)FindResource("OnAccentColor");
+
         using var bmp = new SD.Bitmap(32, 32);
         using (var g = SD.Graphics.FromImage(bmp))
         {
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            using var fill = new SD.SolidBrush(SD.Color.FromArgb(124, 92, 255));
+            using var fill = new SD.SolidBrush(SD.Color.FromArgb(accent.R, accent.G, accent.B));
             g.FillEllipse(fill, 1, 1, 30, 30);
-            using var pen = new SD.Pen(SD.Color.White, 3f)
+            using var pen = new SD.Pen(SD.Color.FromArgb(glyph.R, glyph.G, glyph.B), 3f)
             {
                 StartCap = System.Drawing.Drawing2D.LineCap.Round,
                 EndCap = System.Drawing.Drawing2D.LineCap.Round
@@ -229,24 +250,12 @@ public partial class MainWindow : Window
         _settings.Save();
     }
 
-    DateTime NextClock()
-    {
-        var now = DateTime.Now;
-        var t = now.Date.AddHours(_ch.Value).AddMinutes(_cm.Value);
-        return t <= now ? t.AddDays(1) : t;
-    }
-
-    static string Span(TimeSpan d)
-    {
-        int h = (int)d.TotalHours, m = d.Minutes + (d.Seconds > 0 ? 1 : 0);
-        if (m == 60) { h++; m = 0; }
-        return h > 0 ? $"{h} ч {m} мин" : $"{m} мин";
-    }
+    DateTime NextClock() => TimeLogic.NextClockTime(DateTime.Now, _ch.Value, _cm.Value);
 
     void SetHint(string text, bool error = false)
     {
         HintText.Text = text;
-        HintText.Foreground = new SolidColorBrush(error ? Color.FromRgb(0xFF, 0x6B, 0x81) : Color.FromRgb(0x8A, 0x93, 0xBF));
+        HintText.Foreground = (Brush)FindResource(error ? "DangerBrush" : "TextMutedBrush");
     }
 
     void RefreshIdle()
@@ -256,14 +265,14 @@ public partial class MainWindow : Window
         if (IsTimerMode)
         {
             TimeText.Text = $"{_th.Value:00}:{_tm.Value:00}:00";
-            var end = DateTime.Now.AddHours(_th.Value).AddMinutes(_tm.Value);
+            var end = TimeLogic.TimerTarget(DateTime.Now, _th.Value, _tm.Value);
             SetHint(_th.Value == 0 && _tm.Value == 0 ? "Выберите время до выключения" : $"Сработает в {end:HH:mm}");
         }
         else
         {
             var end = NextClock();
             TimeText.Text = $"{end:HH:mm}";
-            SetHint($"{(end.Date == DateTime.Today ? "Сегодня" : "Завтра")} в {end:HH:mm}, через {Span(end - DateTime.Now)}");
+            SetHint($"{(end.Date == DateTime.Today ? "Сегодня" : "Завтра")} в {end:HH:mm}, через {TimeLogic.FormatSpan(end - DateTime.Now)}");
         }
     }
 
@@ -277,21 +286,22 @@ public partial class MainWindow : Window
     void Start()
     {
         var now = DateTime.Now;
-        var target = IsTimerMode ? now.AddHours(_th.Value).AddMinutes(_tm.Value) : NextClock();
-        if ((target - now).TotalSeconds < 10)
+        var target = IsTimerMode ? TimeLogic.TimerTarget(now, _th.Value, _tm.Value) : NextClock();
+        if (!TimeLogic.IsDelayValid(now, target))
         {
             SetHint("Укажите время больше нуля", true);
             return;
         }
 
         SaveSettings();
-        _start = now; _target = target; _intro = now;
+        _start = now; _target = target;
         _fired.Clear(); _final = false; _active = true; _lastSec = -1;
 
         StatusText.Text = $"{(IsRestart ? "Перезагрузка" : "Выключение")} в {target:HH:mm}" +
                           (target.Date != now.Date ? " (завтра)" : "");
         SetHint("Таймер запущен");
         SetUi(true);
+        StartRing(intro: true);
         Pulse();
     }
 
@@ -299,7 +309,7 @@ public partial class MainWindow : Window
     {
         if (_final) Run("/a");
         _active = _final = false;
-        DrawArc(0);
+        StopRing();
         _tray.Text = "Shutdown Timer";
         _lastSec = -1;
         SetUi(false);
@@ -311,8 +321,8 @@ public partial class MainWindow : Window
         _final = true;
         _start = DateTime.Now;
         _target = _start.AddSeconds(FinalSeconds);
-        _intro = _start.AddDays(-1);
         Run(IsRestart ? $"/r /t {FinalSeconds}" : $"/s /t {FinalSeconds}");
+        StartRing(intro: false);
 
         StatusText.Text = "Завершение работы…";
         BtnGo.Content = "Отменить выключение";
@@ -336,6 +346,7 @@ public partial class MainWindow : Window
     {
         BtnGo.Content = active ? "Отменить" : "Запустить";
         BtnGo.Background = (Brush)FindResource(active ? "StopBrush" : "GoBrush");
+        BtnGo.Foreground = (Brush)FindResource(active ? "OnStopBrush" : "OnAccentBrush");
         _cancelItem.Enabled = active;
 
         foreach (var el in new UIElement[] { ModeBar, InputsGrid, OptionsPanel })
@@ -360,13 +371,9 @@ public partial class MainWindow : Window
         var now = DateTime.Now;
         double total = Math.Max(1, (_target - _start).TotalSeconds);
         double left = Math.Max(0, (_target - now).TotalSeconds);
-        int secs = (int)Math.Ceiling(left);
+        int secs = TimeLogic.RemainingSeconds(now, _target);
 
-        TimeText.Text = $"{secs / 3600:00}:{secs / 60 % 60:00}:{secs % 60:00}";
-
-        double intro = Math.Min(1, (now - _intro).TotalMilliseconds / 900);
-        intro = 1 - Math.Pow(1 - intro, 3);
-        DrawArc(left / total * intro);
+        TimeText.Text = TimeLogic.FormatCountdown(secs);
 
         if (secs != _lastSec)
         {
@@ -376,19 +383,15 @@ public partial class MainWindow : Window
 
         if (_final) return;
 
-        foreach (var m in Marks)
-        {
-            if (_fired.Contains(m) || left > m) continue;
-            _fired.Add(m);
-            if (m < total - 1 && Reminders.IsChecked == true) Remind(m);
-        }
+        foreach (var mark in TimeLogic.TakeDueReminders(left, total, _fired))
+            if (Reminders.IsChecked == true) Remind(mark);
 
         if (left <= 0) Fire();
     }
 
     void Remind(int seconds)
     {
-        string t = seconds >= 60 ? $"{seconds / 60} мин" : $"{seconds} сек";
+        string t = TimeLogic.FormatMark(seconds);
         _tray.ShowBalloonTip(6000, "Shutdown Timer",
             $"До {(IsRestart ? "перезагрузки" : "выключения")} осталось {t}", WF.ToolTipIcon.Info);
         Pulse();
@@ -396,20 +399,82 @@ public partial class MainWindow : Window
 
     // ---------------- Анимации ----------------
 
+    // Рисует дугу кольца. Вызывается из свойства RingFraction, пока идёт анимация.
     void DrawArc(double f)
     {
         f = Math.Clamp(f, 0, 0.9999);
-        if (f <= 0) { Arc.Data = Geometry.Empty; return; }
+        if (f <= 0.0005)
+        {
+            Arc.Data = Geometry.Empty;
+            ArcGlow.Data = Geometry.Empty;
+            return;
+        }
 
         double a = -Math.PI / 2 + 2 * Math.PI * f;
         var end = new Point(C + R * Math.Cos(a), C + R * Math.Sin(a));
         var fig = new PathFigure { StartPoint = new Point(C, C - R) };
         fig.Segments.Add(new ArcSegment(end, new Size(R, R), 0, f > 0.5, SweepDirection.Clockwise, true));
-        Arc.Data = new PathGeometry(new[] { fig });
+        var geometry = new PathGeometry(new[] { fig });
+        geometry.Freeze();               // замороженная геометрия рисуется дешевле
+        Arc.Data = geometry;
+        ArcGlow.Data = geometry;         // то же самое для полупрозрачного «свечения» под дугой
+    }
+
+    // Запускает анимацию кольца. intro: сначала дуга «вырастает» за 0,7 с, затем плавно убывает до нуля.
+    void StartRing(bool intro)
+    {
+        int gen = ++_ringGen;
+        if (!Shown) return;     // скрытому окну анимация не нужна, при показе она запустится сама
+
+        double total = Math.Max(1, (_target - _start).TotalSeconds);
+
+        void Countdown()
+        {
+            if (gen != _ringGen || !_active) return;
+            double left = Math.Max(0.05, (_target - DateTime.Now).TotalSeconds);
+            double from = Math.Min(1, left / total);
+            var anim = new DoubleAnimation(from, 0, TimeSpan.FromSeconds(left)) { FillBehavior = FillBehavior.HoldEnd };
+
+            // Чем медленнее движется дуга, тем реже её нужно перерисовывать: около 4 кадров на пиксель, от 4 до 60 к/с
+            double fps = Math.Clamp(Math.Ceiling(2 * Math.PI * R / total * 4), 4, 60);
+            Timeline.SetDesiredFrameRate(anim, (int)fps);
+            BeginAnimation(RingFractionProperty, anim);
+        }
+
+        if (!intro) { Countdown(); return; }
+
+        double full = Math.Min(1, Math.Max(0.05, (_target - DateTime.Now).TotalSeconds) / total);
+        var grow = new DoubleAnimation(0, full, TimeSpan.FromMilliseconds(700))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        grow.Completed += (_, _) => Countdown();
+        BeginAnimation(RingFractionProperty, grow);
+    }
+
+    void StopRing()
+    {
+        _ringGen++;
+        BeginAnimation(RingFractionProperty, null);
+        RingFraction = 0;
+        DrawArc(0);
+    }
+
+    void OnVisibilityChanged()
+    {
+        if (!Shown)
+        {
+            _ringGen++;
+            BeginAnimation(RingFractionProperty, null);
+            Breathe(false);
+        }
+        else if (_active) StartRing(intro: false);
+        else Breathe(true);
     }
 
     void Pulse()
     {
+        if (!Shown) return;
         var a = new DoubleAnimation(1, 1.08, TimeSpan.FromMilliseconds(260))
         { AutoReverse = true, EasingFunction = new SineEase() };
         RingScale.BeginAnimation(ScaleTransform.ScaleXProperty, a);
@@ -418,9 +483,13 @@ public partial class MainWindow : Window
 
     void Breathe(bool on)
     {
-        if (on)
-            TimeText.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0.55, TimeSpan.FromMilliseconds(1600))
-            { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase() });
+        if (on && Shown)
+        {
+            var anim = new DoubleAnimation(1, 0.55, TimeSpan.FromMilliseconds(1600))
+            { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase() };
+            Timeline.SetDesiredFrameRate(anim, 30);   // для медленного «дыхания» 30 к/с достаточно
+            TimeText.BeginAnimation(OpacityProperty, anim);
+        }
         else
         {
             TimeText.BeginAnimation(OpacityProperty, null);
@@ -447,8 +516,7 @@ sealed class Stepper : StackPanel
     /// <summary>Установить значение без события Changed.</summary>
     public void Set(int value)
     {
-        int n = _max - _min + 1;
-        _v = ((value - _min) % n + n) % n + _min;
+        _v = TimeLogic.Wrap(value, _min, _max);
         _t.Text = _v.ToString("00");
         var a = new DoubleAnimation(1.18, 1, TimeSpan.FromMilliseconds(220))
         { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
@@ -457,40 +525,41 @@ sealed class Stepper : StackPanel
         st.BeginAnimation(ScaleTransform.ScaleYProperty, a);
     }
 
-    public Stepper(string label, int min, int max, int init, Style soft)
+    public Stepper(string label, int min, int max, int init, FrameworkElement owner)
     {
         _min = min; _max = max; _v = init;
+        var soft = (Style)owner.FindResource("Soft");
         Margin = new Thickness(10, 0, 10, 0);
         Background = Brushes.Transparent;
 
         _t = new TextBlock
         {
             Text = init.ToString("00"), FontSize = 46, FontWeight = FontWeights.Light,
-            Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = (Brush)owner.FindResource("TextBrush"), HorizontalAlignment = HorizontalAlignment.Center,
             RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new ScaleTransform(1, 1),
             Margin = new Thickness(0, 2, 0, 0)
         };
         var cap = new TextBlock
         {
             Text = label, FontSize = 11, HorizontalAlignment = HorizontalAlignment.Center,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x7D, 0x86, 0xB3)), Margin = new Thickness(0, 0, 0, 6)
+            Foreground = (Brush)owner.FindResource("TextMutedBrush"), Margin = new Thickness(0, 0, 0, 6)
         };
 
-        Children.Add(Btn("▲", 1, soft));
+        Children.Add(Btn("▲", 1, soft, owner));
         Children.Add(_t);
         Children.Add(cap);
-        Children.Add(Btn("▼", -1, soft));
+        Children.Add(Btn("▼", -1, soft, owner));
 
         MouseWheel += (_, e) => { Value += e.Delta > 0 ? 1 : -1; e.Handled = true; };
     }
 
-    RepeatButton Btn(string glyph, int delta, Style soft)
+    RepeatButton Btn(string glyph, int delta, Style soft, FrameworkElement owner)
     {
         var b = new RepeatButton
         {
             Content = glyph, Style = soft, Width = 64, Height = 26, FontSize = 10, Padding = new Thickness(0),
-            Background = new SolidColorBrush(Color.FromArgb(0x1F, 255, 255, 255)),
-            Foreground = new SolidColorBrush(Color.FromRgb(0xC9, 0xD0, 0xF5)),
+            Background = (Brush)owner.FindResource("ChipBrush"),
+            Foreground = (Brush)owner.FindResource("TextSoftBrush"),
             Delay = 350, Interval = 70, Focusable = false
         };
         b.Click += (_, _) => Value += delta;
