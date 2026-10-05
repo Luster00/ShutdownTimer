@@ -5,6 +5,35 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-04
+
+### Added
+
+- Юнит-тесты (xUnit) для логики времени и настроек: проект `tests/ShutdownTimer.Tests`, запуск командой `dotnet test`.
+- Шаг `Test` в workflow `Build`: тесты выполняются при каждом push и pull request.
+- Решение `ShutdownTimer.sln`.
+
+### Changed
+
+- Новая цветовая гамма: тёмная сине-серая (`#212C2E`, `#1B2123`, `#0B1B1E`, `#759197`, `#7E9397`). Цвета текста и кнопки отмены подобраны так, чтобы читаться (контраст не ниже 4,5:1).
+- Вычисления времени вынесены из `MainWindow` в `ShutdownTimer.Core/TimeLogic.cs`, настройки перенесены в `ShutdownTimer.Core/AppSettings.cs`. Поведение не изменилось.
+- Все цвета интерфейса собраны в одном блоке палитры в начале `MainWindow.xaml`.
+
+### Fixed
+
+- Подтормаживание анимаций. Кольцо теперь анимируется одной анимацией WPF вместо перерисовки из таймера на 200 мс, тяжёлые размытые тени на анимируемых элементах заменены облегчёнными, анимации останавливаются, пока окно скрыто в трей или свёрнуто.
+
+## [0.2.0] - 2026-10-01
+
+### Added
+
+- Сохранение настроек между запусками: режим, время таймера, время для точного режима, действие (выключение или перезагрузка) и напоминания. Файл хранится в `%AppData%\ShutdownTimer\settings.json`.
+
+### Fixed
+
+- Workflow `Build` теперь запускается и для ветки `master`.
+- В `README.md` и `CHANGELOG.md` исправлены ссылки на репозиторий.
+
 ## [0.1.1] - 2026-09-30
 
 ### Fixed
@@ -28,6 +57,8 @@
 - Работа в системном трее: сворачивание по крестику, меню значка, обратный отсчёт в подсказке.
 - Тёмный интерфейс с кольцом обратного отсчёта и анимациями.
 
-[Unreleased]: https://github.com/YOUR_USERNAME/shutdown-timer/compare/v0.1.1...HEAD
-[0.1.1]: https://github.com/YOUR_USERNAME/shutdown-timer/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/YOUR_USERNAME/shutdown-timer/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Luster00/ShutdownTimer/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Luster00/ShutdownTimer/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/Luster00/ShutdownTimer/compare/v0.1.1...v0.2.0
+[0.1.1]: https://github.com/Luster00/ShutdownTimer/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/Luster00/ShutdownTimer/releases/tag/v0.1.0

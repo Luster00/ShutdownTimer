@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
 
 jobs:
   build:
@@ -17,7 +17,10 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore
-        run: dotnet restore src/ShutdownTimer/ShutdownTimer.csproj
+        run: dotnet restore ShutdownTimer.sln
 
       - name: Build
-        run: dotnet build src/ShutdownTimer/ShutdownTimer.csproj -c Release --no-restore
+        run: dotnet build ShutdownTimer.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test ShutdownTimer.sln -c Release --no-build --verbosity normal

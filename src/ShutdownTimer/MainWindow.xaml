@@ -4,23 +4,59 @@
         Title="Shutdown Timer" Width="460" Height="760"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen"
-        FontFamily="Segoe UI Variable Text, Segoe UI" Foreground="White"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
 
     <Window.Resources>
+        <!-- Палитра: все цвета интерфейса задаются здесь -->
+        <Color x:Key="BgTopColor">#212C2E</Color>
+        <Color x:Key="BgBottomColor">#1B2123</Color>
+        <Color x:Key="AccentColor">#759197</Color>
+        <Color x:Key="Accent2Color">#7E9397</Color>
+        <Color x:Key="OnAccentColor">#0B1B1E</Color>
+        <Color x:Key="TextColor">#EAF1F2</Color>
+        <Color x:Key="TextSoftColor">#C9D6D9</Color>
+        <Color x:Key="TextSecondaryColor">#A9BABD</Color>
+        <Color x:Key="TextMutedColor">#8CA0A5</Color>
+        <Color x:Key="SurfaceColor">#A60B1B1E</Color>
+        <Color x:Key="ChipColor">#26759197</Color>
+        <Color x:Key="CardBorderColor">#33759197</Color>
+        <Color x:Key="ToggleOffColor">#3A4A4D</Color>
+        <Color x:Key="DangerColor">#E4887A</Color>
+        <Color x:Key="StopStartColor">#D9786A</Color>
+        <Color x:Key="StopEndColor">#E58C6E</Color>
+        <Color x:Key="OnStopColor">#0B1B1E</Color>
+
+        <!-- Кисти из палитры -->
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+        <SolidColorBrush x:Key="TextSoftBrush" Color="{StaticResource TextSoftColor}"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}"/>
+        <SolidColorBrush x:Key="OnAccentBrush" Color="{StaticResource OnAccentColor}"/>
+        <SolidColorBrush x:Key="OnStopBrush" Color="{StaticResource OnStopColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
+        <SolidColorBrush x:Key="ChipBrush" Color="{StaticResource ChipColor}"/>
+        <SolidColorBrush x:Key="CardBorderBrush" Color="{StaticResource CardBorderColor}"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
+
+        <LinearGradientBrush x:Key="CardBrush" StartPoint="0,0" EndPoint="0.6,1">
+            <GradientStop Color="{StaticResource BgTopColor}" Offset="0"/>
+            <GradientStop Color="{StaticResource BgBottomColor}" Offset="1"/>
+        </LinearGradientBrush>
         <LinearGradientBrush x:Key="GoBrush" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#7C5CFF" Offset="0"/>
-            <GradientStop Color="#22B8F0" Offset="1"/>
+            <GradientStop Color="{StaticResource AccentColor}" Offset="0"/>
+            <GradientStop Color="{StaticResource Accent2Color}" Offset="1"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="StopBrush" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#FF5C7A" Offset="0"/>
-            <GradientStop Color="#FF8A5C" Offset="1"/>
+            <GradientStop Color="{StaticResource StopStartColor}" Offset="0"/>
+            <GradientStop Color="{StaticResource StopEndColor}" Offset="1"/>
         </LinearGradientBrush>
 
         <!-- Кнопка с плавным увеличением при наведении -->
         <Style x:Key="Soft" TargetType="ButtonBase">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
             <Setter Property="Padding" Value="16,8"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -64,7 +100,7 @@
 
         <!-- Сегментированный переключатель -->
         <Style x:Key="Seg" TargetType="RadioButton">
-            <Setter Property="Foreground" Value="#9AA3C7"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -79,11 +115,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Foreground" Value="{StaticResource OnAccentBrush}"/>
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#7C5CFF" Duration="0:0:0.25"/>
+                                            <ColorAnimation Storyboard.TargetName="bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource AccentColor}" Duration="0:0:0.25"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.EnterActions>
@@ -103,7 +139,7 @@
 
         <!-- Переключатель-тумблер -->
         <Style x:Key="Toggle" TargetType="CheckBox">
-            <Setter Property="Foreground" Value="#C9D0F5"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSoftBrush}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -113,9 +149,9 @@
                         <StackPanel Orientation="Horizontal" Background="Transparent">
                             <Border x:Name="track" Width="46" Height="26" CornerRadius="13">
                                 <Border.Background>
-                                    <SolidColorBrush Color="#33FFFFFF"/>
+                                    <SolidColorBrush Color="{StaticResource ToggleOffColor}"/>
                                 </Border.Background>
-                                <Ellipse x:Name="knob" Width="20" Height="20" Fill="White"
+                                <Ellipse x:Name="knob" Width="20" Height="20" Fill="{StaticResource TextBrush}"
                                          HorizontalAlignment="Left" Margin="3,0,0,0"/>
                             </Border>
                             <ContentPresenter Margin="12,0,0,0" VerticalAlignment="Center"/>
@@ -126,7 +162,7 @@
                                     <BeginStoryboard>
                                         <Storyboard>
                                             <ThicknessAnimation Storyboard.TargetName="knob" Storyboard.TargetProperty="Margin" To="23,0,0,0" Duration="0:0:0.2"/>
-                                            <ColorAnimation Storyboard.TargetName="track" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#7C5CFF" Duration="0:0:0.2"/>
+                                            <ColorAnimation Storyboard.TargetName="track" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource AccentColor}" Duration="0:0:0.2"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.EnterActions>
@@ -134,7 +170,7 @@
                                     <BeginStoryboard>
                                         <Storyboard>
                                             <ThicknessAnimation Storyboard.TargetName="knob" Storyboard.TargetProperty="Margin" To="3,0,0,0" Duration="0:0:0.2"/>
-                                            <ColorAnimation Storyboard.TargetName="track" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#33FFFFFF" Duration="0:0:0.2"/>
+                                            <ColorAnimation Storyboard.TargetName="track" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="{StaticResource ToggleOffColor}" Duration="0:0:0.2"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.ExitActions>
@@ -146,135 +182,144 @@
         </Style>
     </Window.Resources>
 
-    <Border x:Name="Root" Margin="14" CornerRadius="26" BorderThickness="1" BorderBrush="#22FFFFFF"
-            RenderTransformOrigin="0.5,0.5">
-        <Border.RenderTransform>
+    <!--
+        Производительность. Окно с AllowsTransparency рисуется программно, а размытые тени (DropShadowEffect)
+        на анимируемых элементах очень дороги. Поэтому единственная тень - под карточкой - вынесена в отдельный
+        статичный слой с кэшированием (BitmapCache) и не пересчитывается при анимациях. Свечение дуги и кнопки
+        сделано обычными полупрозрачными фигурами без эффектов.
+    -->
+    <Grid x:Name="Root" Margin="14" RenderTransformOrigin="0.5,0.5">
+        <Grid.RenderTransform>
             <ScaleTransform x:Name="RootScale"/>
-        </Border.RenderTransform>
-        <Border.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="0.6,1">
-                <GradientStop Color="#171A3A" Offset="0"/>
-                <GradientStop Color="#0B0D1F" Offset="1"/>
-            </LinearGradientBrush>
-        </Border.Background>
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="28" ShadowDepth="4" Opacity="0.55" Color="Black"/>
-        </Border.Effect>
+        </Grid.RenderTransform>
 
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="46"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <!-- Заголовок -->
-            <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="TitleBar_Drag">
-                <StackPanel Orientation="Horizontal" Margin="22,0,0,0" VerticalAlignment="Center">
-                    <Ellipse Width="10" Height="10" Fill="{StaticResource GoBrush}" Margin="0,0,10,0"/>
-                    <TextBlock Text="Shutdown Timer" FontSize="13" Foreground="#9AA3C7"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,12,0" VerticalAlignment="Center">
-                    <Button Style="{StaticResource Soft}" Content="—" Width="36" Height="30" Padding="0"
-                            Foreground="#9AA3C7" Click="Minimize_Click" ToolTip="Свернуть"/>
-                    <Button Style="{StaticResource Soft}" Content="✕" Width="36" Height="30" Padding="0"
-                            Foreground="#9AA3C7" Click="Close_Click" ToolTip="Скрыть в трей"/>
-                </StackPanel>
-            </Grid>
-
-            <!-- Режим -->
-            <Border x:Name="ModeBar" Grid.Row="1" Margin="24,4,24,0" CornerRadius="16" Background="#14FFFFFF" Padding="2">
-                <UniformGrid Columns="2">
-                    <RadioButton x:Name="RbTimer" Style="{StaticResource Seg}" GroupName="mode"
-                                 Content="Таймер" IsChecked="True" Click="Mode_Click"/>
-                    <RadioButton x:Name="RbClock" Style="{StaticResource Seg}" GroupName="mode"
-                                 Content="Точное время" Click="Mode_Click"/>
-                </UniformGrid>
+        <!-- Статичная тень под карточкой -->
+        <Border IsHitTestVisible="False" CacheMode="BitmapCache">
+            <Border CornerRadius="26" Background="Black">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="28" ShadowDepth="4" Opacity="0.55" Color="Black"/>
+                </Border.Effect>
             </Border>
+        </Border>
 
-            <!-- Кольцо -->
-            <Grid x:Name="RingHost" Grid.Row="2" Width="220" Height="220" Margin="0,18,0,10"
-                  RenderTransformOrigin="0.5,0.5">
-                <Grid.RenderTransform>
-                    <ScaleTransform x:Name="RingScale"/>
-                </Grid.RenderTransform>
-                <Ellipse Margin="6" Stroke="#1FFFFFFF" StrokeThickness="12"/>
-                <Path x:Name="Arc" StrokeThickness="12" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                      HorizontalAlignment="Left" VerticalAlignment="Top">
-                    <Path.Stroke>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#7C5CFF" Offset="0"/>
-                            <GradientStop Color="#22D3EE" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Path.Stroke>
-                    <Path.Effect>
-                        <DropShadowEffect Color="#7C5CFF" BlurRadius="20" ShadowDepth="0" Opacity="0.7"/>
-                    </Path.Effect>
-                </Path>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock x:Name="TimeText" Text="00:30:00" FontSize="38" FontWeight="Light"
-                               FontFamily="Segoe UI Variable Display, Segoe UI Light, Segoe UI"
-                               HorizontalAlignment="Center"/>
-                    <TextBlock x:Name="StatusText" Text="Готов к запуску" FontSize="13" Foreground="#8A93BF"
-                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                </StackPanel>
-            </Grid>
-
-            <!-- Ввод времени -->
-            <Grid x:Name="InputsGrid" Grid.Row="3" Margin="24,6,24,0">
+        <Border x:Name="Card" CornerRadius="26" BorderThickness="1"
+                BorderBrush="{StaticResource CardBorderBrush}" Background="{StaticResource CardBrush}"
+                TextElement.Foreground="{StaticResource TextBrush}">
+            <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="46"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Grid Grid.Row="0">
-                    <StackPanel x:Name="PanelTimer">
-                        <StackPanel.RenderTransform><TranslateTransform/></StackPanel.RenderTransform>
-                        <StackPanel x:Name="TimerHost" Orientation="Horizontal" HorizontalAlignment="Center"/>
-                        <UniformGrid Columns="4" Margin="0,8,0,0">
-                            <Button Style="{StaticResource Soft}" Background="#1FFFFFFF" Foreground="#C9D0F5" Margin="4,0" Padding="0,7" FontSize="13" Content="15 мин" Tag="15" Click="Chip_Click"/>
-                            <Button Style="{StaticResource Soft}" Background="#1FFFFFFF" Foreground="#C9D0F5" Margin="4,0" Padding="0,7" FontSize="13" Content="30 мин" Tag="30" Click="Chip_Click"/>
-                            <Button Style="{StaticResource Soft}" Background="#1FFFFFFF" Foreground="#C9D0F5" Margin="4,0" Padding="0,7" FontSize="13" Content="1 час" Tag="60" Click="Chip_Click"/>
-                            <Button Style="{StaticResource Soft}" Background="#1FFFFFFF" Foreground="#C9D0F5" Margin="4,0" Padding="0,7" FontSize="13" Content="2 часа" Tag="120" Click="Chip_Click"/>
-                        </UniformGrid>
+                <!-- Заголовок -->
+                <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="TitleBar_Drag">
+                    <StackPanel Orientation="Horizontal" Margin="22,0,0,0" VerticalAlignment="Center">
+                        <Ellipse Width="10" Height="10" Fill="{StaticResource GoBrush}" Margin="0,0,10,0"/>
+                        <TextBlock Text="Shutdown Timer" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}"/>
                     </StackPanel>
-
-                    <StackPanel x:Name="PanelClock" Visibility="Collapsed" VerticalAlignment="Center">
-                        <StackPanel.RenderTransform><TranslateTransform/></StackPanel.RenderTransform>
-                        <StackPanel x:Name="ClockHost" Orientation="Horizontal" HorizontalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,12,0" VerticalAlignment="Center">
+                        <Button Style="{StaticResource Soft}" Content="—" Width="36" Height="30" Padding="0"
+                                Foreground="{StaticResource TextSecondaryBrush}" Click="Minimize_Click" ToolTip="Свернуть"/>
+                        <Button Style="{StaticResource Soft}" Content="✕" Width="36" Height="30" Padding="0"
+                                Foreground="{StaticResource TextSecondaryBrush}" Click="Close_Click" ToolTip="Скрыть в трей"/>
                     </StackPanel>
                 </Grid>
 
-                <TextBlock x:Name="HintText" Grid.Row="1" FontSize="13" Foreground="#8A93BF"
-                           HorizontalAlignment="Center" Margin="0,10,0,0"/>
-            </Grid>
-
-            <!-- Параметры -->
-            <StackPanel x:Name="OptionsPanel" Grid.Row="4" Margin="24,10,24,0">
-                <Border CornerRadius="16" Background="#14FFFFFF" Padding="2">
+                <!-- Режим -->
+                <Border x:Name="ModeBar" Grid.Row="1" Margin="24,4,24,0" CornerRadius="16"
+                        Background="{StaticResource SurfaceBrush}" Padding="2">
                     <UniformGrid Columns="2">
-                        <RadioButton x:Name="RbShutdown" Style="{StaticResource Seg}" GroupName="act"
-                                     Content="Выключить" IsChecked="True"/>
-                        <RadioButton x:Name="RbRestart" Style="{StaticResource Seg}" GroupName="act"
-                                     Content="Перезагрузить"/>
+                        <RadioButton x:Name="RbTimer" Style="{StaticResource Seg}" GroupName="mode"
+                                     Content="Таймер" IsChecked="True" Click="Mode_Click"/>
+                        <RadioButton x:Name="RbClock" Style="{StaticResource Seg}" GroupName="mode"
+                                     Content="Точное время" Click="Mode_Click"/>
                     </UniformGrid>
                 </Border>
-                <CheckBox x:Name="Reminders" Style="{StaticResource Toggle}" Margin="4,14,0,0"
-                          Content="Напоминать за 10, 5 и 1 минуту" IsChecked="True"/>
-            </StackPanel>
 
-            <!-- Главная кнопка -->
-            <Button x:Name="BtnGo" Grid.Row="6" Style="{StaticResource Soft}" Margin="24,0,24,24" Height="56"
-                    FontSize="16" FontWeight="SemiBold" Content="Запустить"
-                    Background="{StaticResource GoBrush}" Click="Go_Click">
-                <Button.Effect>
-                    <DropShadowEffect Color="#7C5CFF" BlurRadius="24" ShadowDepth="4" Opacity="0.4"/>
-                </Button.Effect>
-            </Button>
-        </Grid>
-    </Border>
+                <!-- Кольцо -->
+                <Grid x:Name="RingHost" Grid.Row="2" Width="220" Height="220" Margin="0,18,0,10"
+                      RenderTransformOrigin="0.5,0.5">
+                    <Grid.RenderTransform>
+                        <ScaleTransform x:Name="RingScale"/>
+                    </Grid.RenderTransform>
+                    <Ellipse Margin="6" Stroke="{StaticResource ChipBrush}" StrokeThickness="12"/>
+                    <!-- мягкое свечение: широкая полупрозрачная дуга под основной (вместо DropShadowEffect) -->
+                    <Path x:Name="ArcGlow" StrokeThickness="22" Stroke="{StaticResource AccentBrush}" Opacity="0.16"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False"/>
+                    <Path x:Name="Arc" StrokeThickness="12" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False">
+                        <Path.Stroke>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="{StaticResource AccentColor}" Offset="0"/>
+                                <GradientStop Color="{StaticResource Accent2Color}" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Path.Stroke>
+                    </Path>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="TimeText" Text="00:30:00" FontSize="38" FontWeight="Light"
+                                   FontFamily="Segoe UI Variable Display, Segoe UI Light, Segoe UI"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="StatusText" Text="Готов к запуску" FontSize="13"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Ввод времени -->
+                <Grid x:Name="InputsGrid" Grid.Row="3" Margin="24,6,24,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <StackPanel x:Name="PanelTimer">
+                            <StackPanel.RenderTransform><TranslateTransform/></StackPanel.RenderTransform>
+                            <StackPanel x:Name="TimerHost" Orientation="Horizontal" HorizontalAlignment="Center"/>
+                            <UniformGrid Columns="4" Margin="0,8,0,0">
+                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" Content="15 мин" Tag="15" Click="Chip_Click"/>
+                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" Content="30 мин" Tag="30" Click="Chip_Click"/>
+                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" Content="1 час" Tag="60" Click="Chip_Click"/>
+                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" Content="2 часа" Tag="120" Click="Chip_Click"/>
+                            </UniformGrid>
+                        </StackPanel>
+
+                        <StackPanel x:Name="PanelClock" Visibility="Collapsed" VerticalAlignment="Center">
+                            <StackPanel.RenderTransform><TranslateTransform/></StackPanel.RenderTransform>
+                            <StackPanel x:Name="ClockHost" Orientation="Horizontal" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock x:Name="HintText" Grid.Row="1" FontSize="13" Foreground="{StaticResource TextMutedBrush}"
+                               HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                </Grid>
+
+                <!-- Параметры -->
+                <StackPanel x:Name="OptionsPanel" Grid.Row="4" Margin="24,10,24,0">
+                    <Border CornerRadius="16" Background="{StaticResource SurfaceBrush}" Padding="2">
+                        <UniformGrid Columns="2">
+                            <RadioButton x:Name="RbShutdown" Style="{StaticResource Seg}" GroupName="act"
+                                         Content="Выключить" IsChecked="True" Click="Option_Click"/>
+                            <RadioButton x:Name="RbRestart" Style="{StaticResource Seg}" GroupName="act"
+                                         Content="Перезагрузить" Click="Option_Click"/>
+                        </UniformGrid>
+                    </Border>
+                    <CheckBox x:Name="Reminders" Style="{StaticResource Toggle}" Margin="4,14,0,0"
+                              Content="Напоминать за 10, 5 и 1 минуту" IsChecked="True" Click="Option_Click"/>
+                </StackPanel>
+
+                <!-- Главная кнопка -->
+                <Button x:Name="BtnGo" Grid.Row="6" Style="{StaticResource Soft}" Margin="24,0,24,24" Height="56"
+                        FontSize="16" FontWeight="SemiBold" Content="Запустить"
+                        Foreground="{StaticResource OnAccentBrush}"
+                        Background="{StaticResource GoBrush}" Click="Go_Click"/>
+            </Grid>
+        </Border>
+    </Grid>
 </Window>
