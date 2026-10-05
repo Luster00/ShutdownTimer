@@ -7,13 +7,8 @@
 ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-<img width="431" height="728" alt="изображение" src="https://github.com/user-attachments/assets/00ec5d19-596d-409a-884e-9ce71fcf103a" /> 
-<img width="432" height="728" alt="изображение" src="https://github.com/user-attachments/assets/68b90a53-e568-4bbe-8a7a-534ef0f2c821" />
-
-
-
-<!-- Добавьте скриншот: положите файл в docs/images/screenshot.png и раскомментируйте строку ниже -->
-<!-- ![Скриншот](docs/images/screenshot.png) -->
+<img width="460" height="760" alt="изображение" src="https://github.com/user-attachments/assets/3cc5e0b8-e3ba-4706-812c-8520803c5f21" />
+<img width="430" height="390" alt="изображение" src="https://github.com/user-attachments/assets/3d02899a-d65b-41fa-946b-753bebdbfd7e" />
 
 ## Возможности
 
@@ -109,28 +104,6 @@ dotnet publish src/ShutdownTimer -c Release -r win-x64 --self-contained true -p:
 
 Флаг принудительного закрытия программ (`/f`) не используется, чтобы вы не потеряли несохранённые данные. Если какая-то программа мешает выключению, Windows покажет обычный экран с этим сообщением.
 
-## Структура репозитория
-
-```
-ShutdownTimer/
-├── src/ShutdownTimer/        приложение (WPF, .NET 8, только Windows)
-│   ├── App.xaml
-│   ├── App.xaml.cs           запуск и защита от второго экземпляра
-│   ├── MainWindow.xaml       палитра, разметка, стили, шаблоны анимаций
-│   ├── MainWindow.xaml.cs    интерфейс: таймер, трей, уведомления, анимации
-│   └── ShutdownTimer.csproj
-├── src/ShutdownTimer.Core/   логика без WPF
-│   ├── TimeLogic.cs          вычисления времени, форматирование, напоминания
-│   └── AppSettings.cs        сохранение и загрузка настроек
-├── tests/ShutdownTimer.Tests/ юнит-тесты (xUnit)
-├── ShutdownTimer.sln
-├── docs/ARCHITECTURE.md      устройство приложения
-├── .github/                  CI, релизы, шаблоны issue и PR
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-└── LICENSE
-```
-
 Подробнее о внутреннем устройстве: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Тесты
@@ -152,11 +125,11 @@ dotnet test
 ## Планы
 
 - [x] Сохранение настроек (с версии 0.2.0)
-- [ ] Автозапуск с Windows из настроек приложения
+- [x] Автозапуск с Windows из настроек приложения (с версии 0.3.1)
 - [ ] Сон и гибернация как дополнительные действия
 - [x] Запрет повторного запуска (с версии 0.1.1)
 - [ ] Звук уведомлений
-- [ ] Английская локализация
+- [x] Английская локализация (с версии 0.3.1)
 - [x] Юнит-тесты для логики времени (с версии 0.3.0)
 
 ## Участие в разработке
