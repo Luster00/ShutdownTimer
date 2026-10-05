@@ -22,6 +22,12 @@ public sealed class AppSettings
 
     public bool Reminders { get; set; } = true;
 
+    /// <summary>Язык интерфейса: auto, ru или en. По умолчанию язык Windows.</summary>
+    public string Language { get; set; } = "auto";
+
+    /// <summary>true — запускать приложение вместе с Windows.</summary>
+    public bool AutoStart { get; set; }
+
     static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     /// <summary>%AppData%\ShutdownTimer\settings.json</summary>
@@ -29,10 +35,8 @@ public sealed class AppSettings
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "ShutdownTimer", "settings.json");
 
-    /// <summary>Читает настройки. Если файла нет или он повреждён, возвращает значения по умолчанию.</summary>
     public static AppSettings Load() => Load(FilePath);
 
-    /// <summary>Читает настройки из указанного файла.</summary>
     public static AppSettings Load(string path)
     {
         try
@@ -53,7 +57,6 @@ public sealed class AppSettings
 
     public void Save() => Save(FilePath);
 
-    /// <summary>Записывает настройки через временный файл, чтобы не потерять их при сбое.</summary>
     public void Save(string path)
     {
         try
@@ -69,12 +72,17 @@ public sealed class AppSettings
         }
     }
 
-    // Защита от ручной правки файла: значения приводятся к допустимым диапазонам.
     void Normalize()
     {
         TimerHours = Math.Clamp(TimerHours, 0, 23);
         TimerMinutes = Math.Clamp(TimerMinutes, 0, 59);
         ClockHour = ClockHour is int h ? Math.Clamp(h, 0, 23) : null;
         ClockMinute = ClockMinute is int m ? Math.Clamp(m, 0, 59) : null;
+        Language = Language?.ToLowerInvariant() switch
+        {
+            "ru" => "ru",
+            "en" => "en",
+            _ => "auto"
+        };
     }
 }

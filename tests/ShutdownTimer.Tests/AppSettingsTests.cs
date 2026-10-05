@@ -28,6 +28,8 @@ public class AppSettingsTests : IDisposable
         Assert.Null(s.ClockMinute);
         Assert.False(s.Restart);
         Assert.True(s.Reminders);
+        Assert.Equal("auto", s.Language);
+        Assert.False(s.AutoStart);
     }
 
     [Fact]
@@ -50,7 +52,9 @@ public class AppSettingsTests : IDisposable
             ClockHour = 23,
             ClockMinute = 40,
             Restart = true,
-            Reminders = false
+            Reminders = false,
+            Language = "en",
+            AutoStart = true
         };
 
         original.Save(FilePath);
@@ -63,6 +67,8 @@ public class AppSettingsTests : IDisposable
         Assert.Equal(40, loaded.ClockMinute);
         Assert.True(loaded.Restart);
         Assert.False(loaded.Reminders);
+        Assert.Equal("en", loaded.Language);
+        Assert.True(loaded.AutoStart);
     }
 
     [Fact]
@@ -150,6 +156,17 @@ public class AppSettingsTests : IDisposable
 
         Assert.Equal(0, s.TimerHours);
         Assert.Equal(30, s.TimerMinutes);
+    }
+
+    [Fact]
+    public void Load_InvalidLanguage_FallsBackToAuto()
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(FilePath, "{\"Language\":\"de\"}");
+
+        var s = AppSettings.Load(FilePath);
+
+        Assert.Equal("auto", s.Language);
     }
 
     [Fact]

@@ -22,7 +22,9 @@ public partial class MainWindow : Window
 
     readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromMilliseconds(200) };
     readonly WF.NotifyIcon _tray;
+    readonly WF.ToolStripMenuItem _openItem;
     readonly WF.ToolStripMenuItem _cancelItem;
+    readonly WF.ToolStripMenuItem _exitItem;
     readonly Stepper _th, _tm, _ch, _cm;
     readonly HashSet<int> _fired = new();
     readonly AppSettings _settings = AppSettings.Load();
@@ -55,11 +57,12 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _settings.AutoStart = StartupManager.IsEnabled();
         var later = DateTime.Now.AddHours(1);
-        _th = new Stepper("часы", 0, 23, _settings.TimerHours, this);
-        _tm = new Stepper("мин", 0, 59, _settings.TimerMinutes, this);
-        _ch = new Stepper("часы", 0, 23, _settings.ClockHour ?? later.Hour, this);
-        _cm = new Stepper("мин", 0, 59, _settings.ClockMinute ?? 0, this);
+        _th = new Stepper(Localization.Text(_settings.Language, "hours"), 0, 23, _settings.TimerHours, this);
+        _tm = new Stepper(Localization.Text(_settings.Language, "minutes"), 0, 59, _settings.TimerMinutes, this);
+        _ch = new Stepper(Localization.Text(_settings.Language, "hours"), 0, 23, _settings.ClockHour ?? later.Hour, this);
+        _cm = new Stepper(Localization.Text(_settings.Language, "minutes"), 0, 59, _settings.ClockMinute ?? 0, this);
 
         TimerHost.Children.Add(_th); TimerHost.Children.Add(Colon()); TimerHost.Children.Add(_tm);
         ClockHost.Children.Add(_ch); ClockHost.Children.Add(Colon()); ClockHost.Children.Add(_cm);
@@ -84,11 +87,11 @@ public partial class MainWindow : Window
 
         // --- трей ---
         var menu = new WF.ContextMenuStrip();
-        menu.Items.Add("Открыть", null, (_, _) => ShowFromTray());
-        _cancelItem = (WF.ToolStripMenuItem)menu.Items.Add("Отменить выключение", null, (_, _) => Cancel());
+        _openItem = (WF.ToolStripMenuItem)menu.Items.Add(Localization.Text(_settings.Language, "open"), null, (_, _) => ShowFromTray());
+        _cancelItem = (WF.ToolStripMenuItem)menu.Items.Add(Localization.Text(_settings.Language, "cancelShutdown"), null, (_, _) => Cancel());
         _cancelItem.Enabled = false;
         menu.Items.Add(new WF.ToolStripSeparator());
-        menu.Items.Add("Выход", null, (_, _) => ExitApp());
+        _exitItem = (WF.ToolStripMenuItem)menu.Items.Add(Localization.Text(_settings.Language, "exit"), null, (_, _) => ExitApp());
 
         _tray = new WF.NotifyIcon
         {
@@ -114,8 +117,48 @@ public partial class MainWindow : Window
             RootScale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
             RootScale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
             Breathe(true);
+            ApplyLanguage();
             RefreshIdle();
         };
+    }
+
+    void ApplyLanguage()
+    {
+        bool en = Localization.IsEnglish(_settings.Language);
+        Title = "Shutdown Timer";
+        MinimizeButton.ToolTip = Localization.Text(_settings.Language, "minimize");
+        CloseButton.ToolTip = Localization.Text(_settings.Language, "hide");
+        SettingsButton.ToolTip = Localization.Text(_settings.Language, "settings");
+        RbTimer.Content = Localization.Text(_settings.Language, "timer");
+        RbClock.Content = Localization.Text(_settings.Language, "exactTime");
+        RbShutdown.Content = Localization.Text(_settings.Language, "shutdown");
+        RbRestart.Content = Localization.Text(_settings.Language, "restart");
+        Reminders.Content = Localization.Text(_settings.Language, "reminders");
+        Preset15.Content = en ? "15 min" : "15 мин";
+        Preset30.Content = en ? "30 min" : "30 мин";
+        Preset60.Content = en ? "1 hour" : "1 час";
+        Preset120.Content = en ? "2 hours" : "2 часа";
+        _th.SetLabel(Localization.Text(_settings.Language, "hours"));
+        _ch.SetLabel(Localization.Text(_settings.Language, "hours"));
+        _tm.SetLabel(Localization.Text(_settings.Language, "minutes"));
+        _cm.SetLabel(Localization.Text(_settings.Language, "minutes"));
+        _openItem.Text = Localization.Text(_settings.Language, "open");
+        _cancelItem.Text = Localization.Text(_settings.Language, "cancelShutdown");
+        _exitItem.Text = Localization.Text(_settings.Language, "exit");
+        _tray.Text = "Shutdown Timer";
+        SetUi(_active);
+    }
+
+    void Settings_Click(object s, RoutedEventArgs e)
+    {
+        if (_active) return;
+        var window = new SettingsWindow(_settings, () =>
+        {
+            ApplyLanguage();
+            RefreshIdle();
+            SaveSettings();
+        }) { Owner = this };
+        window.ShowDialog();
     }
 
     TextBlock Colon() => new()
@@ -143,7 +186,7 @@ public partial class MainWindow : Window
         if (_hintShown) return;
         _hintShown = true;
         _tray.ShowBalloonTip(3000, "Shutdown Timer",
-            "Приложение работает в трее. Двойной клик по значку — открыть.", WF.ToolTipIcon.Info);
+            Localization.Text(_settings.Language, "trayRunning"), WF.ToolTipIcon.Info);
     }
 
     public void ShowFromTray()
@@ -158,7 +201,7 @@ public partial class MainWindow : Window
     void ExitApp()
     {
         if (_active && !_final &&
-            MessageBox.Show("Таймер активен. Выйти и отменить выключение?", "Shutdown Timer",
+            MessageBox.Show(Localization.Text(_settings.Language, "exitQuestion"), "Shutdown Timer",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         if (_active) Cancel();
         SaveSettings();
@@ -252,6 +295,18 @@ public partial class MainWindow : Window
 
     DateTime NextClock() => TimeLogic.NextClockTime(DateTime.Now, _ch.Value, _cm.Value);
 
+    string FormatSpan(TimeSpan span)
+    {
+        int h = (int)span.TotalHours, m = span.Minutes + (span.Seconds > 0 ? 1 : 0);
+        if (m == 60) { h++; m = 0; }
+        if (Localization.IsEnglish(_settings.Language)) return h > 0 ? $"{h}h {m}min" : $"{m}min";
+        return h > 0 ? $"{h} ч {m} мин" : $"{m} мин";
+    }
+
+    string FormatMark(int seconds) => Localization.IsEnglish(_settings.Language)
+        ? seconds >= 60 ? $"{seconds / 60} min" : $"{seconds} sec"
+        : TimeLogic.FormatMark(seconds);
+
     void SetHint(string text, bool error = false)
     {
         HintText.Text = text;
@@ -261,18 +316,19 @@ public partial class MainWindow : Window
     void RefreshIdle()
     {
         if (_active) return;
-        StatusText.Text = "Готов к запуску";
+        StatusText.Text = Localization.Text(_settings.Language, "ready");
         if (IsTimerMode)
         {
             TimeText.Text = $"{_th.Value:00}:{_tm.Value:00}:00";
             var end = TimeLogic.TimerTarget(DateTime.Now, _th.Value, _tm.Value);
-            SetHint(_th.Value == 0 && _tm.Value == 0 ? "Выберите время до выключения" : $"Сработает в {end:HH:mm}");
+            SetHint(_th.Value == 0 && _tm.Value == 0 ? Localization.Text(_settings.Language, "chooseTime") : $"{Localization.Text(_settings.Language, "triggerAt")} {end:HH:mm}");
         }
         else
         {
             var end = NextClock();
             TimeText.Text = $"{end:HH:mm}";
-            SetHint($"{(end.Date == DateTime.Today ? "Сегодня" : "Завтра")} в {end:HH:mm}, через {TimeLogic.FormatSpan(end - DateTime.Now)}");
+            string day = Localization.Text(_settings.Language, end.Date == DateTime.Today ? "today" : "tomorrow");
+            SetHint($"{day} {end:HH:mm}, {Localization.Text(_settings.Language, "through")} {FormatSpan(end - DateTime.Now)}");
         }
     }
 
@@ -289,7 +345,7 @@ public partial class MainWindow : Window
         var target = IsTimerMode ? TimeLogic.TimerTarget(now, _th.Value, _tm.Value) : NextClock();
         if (!TimeLogic.IsDelayValid(now, target))
         {
-            SetHint("Укажите время больше нуля", true);
+            SetHint(Localization.Text(_settings.Language, "invalidTime"), true);
             return;
         }
 
@@ -297,9 +353,10 @@ public partial class MainWindow : Window
         _start = now; _target = target;
         _fired.Clear(); _final = false; _active = true; _lastSec = -1;
 
-        StatusText.Text = $"{(IsRestart ? "Перезагрузка" : "Выключение")} в {target:HH:mm}" +
-                          (target.Date != now.Date ? " (завтра)" : "");
-        SetHint("Таймер запущен");
+        string action = Localization.Text(_settings.Language, IsRestart ? "restartAt" : "shutdownAt");
+        string tomorrow = target.Date != now.Date ? $" ({Localization.Text(_settings.Language, "tomorrow")})" : "";
+        StatusText.Text = $"{action} {target:HH:mm}{tomorrow}";
+        SetHint(Localization.Text(_settings.Language, "timerStarted"));
         SetUi(true);
         StartRing(intro: true);
         Pulse();
@@ -324,10 +381,11 @@ public partial class MainWindow : Window
         Run(IsRestart ? $"/r /t {FinalSeconds}" : $"/s /t {FinalSeconds}");
         StartRing(intro: false);
 
-        StatusText.Text = "Завершение работы…";
-        BtnGo.Content = "Отменить выключение";
+        StatusText.Text = Localization.Text(_settings.Language, "shutdownStarting");
+        BtnGo.Content = Localization.Text(_settings.Language, "cancelShutdown");
+        string action = Localization.Text(_settings.Language, IsRestart ? "reboot" : "powerOff");
         _tray.ShowBalloonTip(5000, "Shutdown Timer",
-            $"Компьютер {(IsRestart ? "перезагрузится" : "выключится")} через {FinalSeconds} секунд. Нажмите «Отменить», чтобы остановить.",
+            string.Format(Localization.Text(_settings.Language, "shutdownIn"), action, FinalSeconds),
             WF.ToolTipIcon.Warning);
         ShowFromTray();
         Pulse();
@@ -344,9 +402,10 @@ public partial class MainWindow : Window
 
     void SetUi(bool active)
     {
-        BtnGo.Content = active ? "Отменить" : "Запустить";
+        BtnGo.Content = active ? Localization.Text(_settings.Language, "cancel") : Localization.Text(_settings.Language, "start");
         BtnGo.Background = (Brush)FindResource(active ? "StopBrush" : "GoBrush");
         BtnGo.Foreground = (Brush)FindResource(active ? "OnStopBrush" : "OnAccentBrush");
+        SettingsButton.IsEnabled = !active;
         _cancelItem.Enabled = active;
 
         foreach (var el in new UIElement[] { ModeBar, InputsGrid, OptionsPanel })
@@ -378,7 +437,7 @@ public partial class MainWindow : Window
         if (secs != _lastSec)
         {
             _lastSec = secs;
-            _tray.Text = $"{(_final ? "Завершение" : "Осталось")} {TimeText.Text}";
+            _tray.Text = $"{Localization.Text(_settings.Language, _final ? "ending" : "remaining")} {TimeText.Text}";
         }
 
         if (_final) return;
@@ -391,9 +450,9 @@ public partial class MainWindow : Window
 
     void Remind(int seconds)
     {
-        string t = TimeLogic.FormatMark(seconds);
+        string t = FormatMark(seconds);
         _tray.ShowBalloonTip(6000, "Shutdown Timer",
-            $"До {(IsRestart ? "перезагрузки" : "выключения")} осталось {t}", WF.ToolTipIcon.Info);
+            $"{Localization.Text(_settings.Language, "timeLeft")} {t}", WF.ToolTipIcon.Info);
         Pulse();
     }
 
@@ -502,6 +561,7 @@ public partial class MainWindow : Window
 sealed class Stepper : StackPanel
 {
     readonly TextBlock _t;
+    readonly TextBlock _label;
     readonly int _min, _max;
     int _v;
 
@@ -514,6 +574,8 @@ sealed class Stepper : StackPanel
     }
 
     /// <summary>Установить значение без события Changed.</summary>
+    public void SetLabel(string label) => _label.Text = label;
+
     public void Set(int value)
     {
         _v = TimeLogic.Wrap(value, _min, _max);
@@ -539,7 +601,7 @@ sealed class Stepper : StackPanel
             RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new ScaleTransform(1, 1),
             Margin = new Thickness(0, 2, 0, 0)
         };
-        var cap = new TextBlock
+        _label = new TextBlock
         {
             Text = label, FontSize = 11, HorizontalAlignment = HorizontalAlignment.Center,
             Foreground = (Brush)owner.FindResource("TextMutedBrush"), Margin = new Thickness(0, 0, 0, 6)
@@ -547,7 +609,7 @@ sealed class Stepper : StackPanel
 
         Children.Add(Btn("▲", 1, soft, owner));
         Children.Add(_t);
-        Children.Add(cap);
+        Children.Add(_label);
         Children.Add(Btn("▼", -1, soft, owner));
 
         MouseWheel += (_, e) => { Value += e.Delta > 0 ? 1 : -1; e.Handled = true; };

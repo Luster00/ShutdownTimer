@@ -183,24 +183,13 @@
     </Window.Resources>
 
     <!--
-        Производительность. Окно с AllowsTransparency рисуется программно, а размытые тени (DropShadowEffect)
-        на анимируемых элементах очень дороги. Поэтому единственная тень - под карточкой - вынесена в отдельный
-        статичный слой с кэшированием (BitmapCache) и не пересчитывается при анимациях. Свечение дуги и кнопки
-        сделано обычными полупрозрачными фигурами без эффектов.
+        Карточка занимает всё окно. Внешнего отступа/тени нет: это исключает
+        размытый прямоугольный ореол по краям прозрачного WPF-окна.
     -->
-    <Grid x:Name="Root" Margin="14" RenderTransformOrigin="0.5,0.5">
+    <Grid x:Name="Root" Margin="0" RenderTransformOrigin="0.5,0.5">
         <Grid.RenderTransform>
             <ScaleTransform x:Name="RootScale"/>
         </Grid.RenderTransform>
-
-        <!-- Статичная тень под карточкой -->
-        <Border IsHitTestVisible="False" CacheMode="BitmapCache">
-            <Border CornerRadius="26" Background="Black">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="28" ShadowDepth="4" Opacity="0.55" Color="Black"/>
-                </Border.Effect>
-            </Border>
-        </Border>
 
         <Border x:Name="Card" CornerRadius="26" BorderThickness="1"
                 BorderBrush="{StaticResource CardBorderBrush}" Background="{StaticResource CardBrush}"
@@ -223,9 +212,11 @@
                         <TextBlock Text="Shutdown Timer" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,12,0" VerticalAlignment="Center">
-                        <Button Style="{StaticResource Soft}" Content="—" Width="36" Height="30" Padding="0"
+                        <Button x:Name="SettingsButton" Style="{StaticResource Soft}" Content="⚙" Width="36" Height="30" Padding="0"
+                                Foreground="{StaticResource TextSecondaryBrush}" Click="Settings_Click" ToolTip="Настройки"/>
+                        <Button x:Name="MinimizeButton" Style="{StaticResource Soft}" Content="—" Width="36" Height="30" Padding="0"
                                 Foreground="{StaticResource TextSecondaryBrush}" Click="Minimize_Click" ToolTip="Свернуть"/>
-                        <Button Style="{StaticResource Soft}" Content="✕" Width="36" Height="30" Padding="0"
+                        <Button x:Name="CloseButton" Style="{StaticResource Soft}" Content="✕" Width="36" Height="30" Padding="0"
                                 Foreground="{StaticResource TextSecondaryBrush}" Click="Close_Click" ToolTip="Скрыть в трей"/>
                     </StackPanel>
                 </Grid>
@@ -283,10 +274,10 @@
                             <StackPanel.RenderTransform><TranslateTransform/></StackPanel.RenderTransform>
                             <StackPanel x:Name="TimerHost" Orientation="Horizontal" HorizontalAlignment="Center"/>
                             <UniformGrid Columns="4" Margin="0,8,0,0">
-                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" Content="15 мин" Tag="15" Click="Chip_Click"/>
-                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" Content="30 мин" Tag="30" Click="Chip_Click"/>
-                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" Content="1 час" Tag="60" Click="Chip_Click"/>
-                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" Content="2 часа" Tag="120" Click="Chip_Click"/>
+                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" x:Name="Preset15" Content="15 мин" Tag="15" Click="Chip_Click"/>
+                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" x:Name="Preset30" Content="30 мин" Tag="30" Click="Chip_Click"/>
+                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" x:Name="Preset60" Content="1 час" Tag="60" Click="Chip_Click"/>
+                                <Button Style="{StaticResource Soft}" Background="{StaticResource ChipBrush}" Foreground="{StaticResource TextSoftBrush}" Margin="4,0" Padding="0,7" FontSize="13" x:Name="Preset120" Content="2 часа" Tag="120" Click="Chip_Click"/>
                             </UniformGrid>
                         </StackPanel>
 
@@ -301,7 +292,7 @@
                 </Grid>
 
                 <!-- Параметры -->
-                <StackPanel x:Name="OptionsPanel" Grid.Row="4" Margin="24,10,24,0">
+                <StackPanel x:Name="OptionsPanel" Grid.Row="4" Margin="24,10,24,12">
                     <Border CornerRadius="16" Background="{StaticResource SurfaceBrush}" Padding="2">
                         <UniformGrid Columns="2">
                             <RadioButton x:Name="RbShutdown" Style="{StaticResource Seg}" GroupName="act"
@@ -315,7 +306,7 @@
                 </StackPanel>
 
                 <!-- Главная кнопка -->
-                <Button x:Name="BtnGo" Grid.Row="6" Style="{StaticResource Soft}" Margin="24,0,24,24" Height="56"
+                <Button x:Name="BtnGo" Grid.Row="6" Style="{StaticResource Soft}" Margin="24,10,24,24" Height="56"
                         FontSize="16" FontWeight="SemiBold" Content="Запустить"
                         Foreground="{StaticResource OnAccentBrush}"
                         Background="{StaticResource GoBrush}" Click="Go_Click"/>
